@@ -78,7 +78,10 @@ def authenticate_request() -> Union[Authorization, Response]:
             user_info["username"] = token_info[OIDC_USERNAME_CLAIM]
             session["user_info"] = user_info
 
-            _store.create_user(user_info['username'], user_info['username'], is_admin=True)
+            if _store.has_user(user_info['username']) is False:
+                _store.create_user(user_info['username'], user_info['username'], is_admin=True)
+            else:
+                _store.update_user(user_info['username'], user_info['username'], is_admin=True)
             
             return Authorization(auth_type="jwt", data=user_info)
         except jwt.exceptions.InvalidTokenError:
@@ -103,15 +106,11 @@ def authenticate_request() -> Union[Authorization, Response]:
         user_info["username"] = token_info[OIDC_USERNAME_CLAIM]
 
         _logger.debug(f'username={user_info["username"]}')
-        # if _store.delete_user(user_info["username"]) is None:
-        #     _logger.debug("user is none")
-        # else:
-        #     _logger.debug("user is not none")
-        # print("user=", _store.get_user(user_info['username']).to_json())
-        # _store.create_user(user_info['username'], user_info['username'])
-        # _logger.debug(f"user={_store.get_user(user_info['username'])}")
 
-        _store.create_user(user_info['username'], user_info['username'], is_admin=True)
+        if _store.has_user(user_info['username']) is False:
+            _store.create_user(user_info['username'], user_info['username'], is_admin=True)
+        else:
+            _store.update_user(user_info['username'], user_info['username'], is_admin=True)
         
         if not token_info:  # pragma: no cover
             _logger.warning("No token_info returned")
