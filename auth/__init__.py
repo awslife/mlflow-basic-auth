@@ -1,4 +1,3 @@
-import base64
 import os
 import sys
 import logging
@@ -44,12 +43,10 @@ def authenticate_request() -> Union[Authorization, Response]:
     resp = make_response()
     if session.get("state", None) is None:
         session["state"] = str(uuid.uuid4())
-    # _logger.debug(f"session['state']={session['state']}")
 
     token = request.headers.get("Authorization", None)
     code = request.args.get('code', None)
     if token is None and code is None:
-        _logger.debug("301")
         resp.status_code = 301
         resp.headers["Content-Type"] = "application/x-www-form-urlencoded"
         resp.location = (f"{OIDC_AUTH_ENDPOINT_URL}"
@@ -78,10 +75,16 @@ def authenticate_request() -> Union[Authorization, Response]:
             user_info["username"] = token_info[OIDC_USERNAME_CLAIM]
             session["user_info"] = user_info
 
+            groups = [str for str in token_info["groups"] if "MLFLOW" in str]
+            is_admin = False
+            for group in groups:
+                if group.lower().endswith("_admin") is True:
+                    is_admin = True
+
             if _store.has_user(user_info['username']) is False:
-                _store.create_user(user_info['username'], user_info['username'], is_admin=True)
+                _store.create_user(user_info['username'], user_info['username'], is_admin=is_admin)
             else:
-                _store.update_user(user_info['username'], user_info['username'], is_admin=True)
+                _store.update_user(user_info['username'], user_info['username'], is_admin=is_admin)
             
             return Authorization(auth_type="jwt", data=user_info)
         except jwt.exceptions.InvalidTokenError:
@@ -89,7 +92,7 @@ def authenticate_request() -> Union[Authorization, Response]:
 
     if code is not None and request.headers.get("Authorization", None) is None:
         if session.get('state', None) != request.args.get('state', None):
-            _logger.debug(f"session['state']={session['state']}, request['state']={request.args.get('state')}")
+            # _logger.debug(f"session['state']={session['state']}, request['state']={request.args.get('state')}")
             return resp
         
         payload = {
@@ -103,19 +106,22 @@ def authenticate_request() -> Union[Authorization, Response]:
         response = httpx.post(f"{OIDC_TOKEN_ENDPOINT_URL}", data=payload)
         access_token = response.json()["access_token"]
         token_info = jwt.decode(access_token, _public_key, algorithms=['HS256', 'RS256'], audience=OIDC_CLIENT_ID)
-        user_info["username"] = token_info[OIDC_USERNAME_CLAIM]
-
-        _logger.debug(f'username={user_info["username"]}')
-
-        if _store.has_user(user_info['username']) is False:
-            _store.create_user(user_info['username'], user_info['username'], is_admin=True)
-        else:
-            _store.update_user(user_info['username'], user_info['username'], is_admin=True)
-        
         if not token_info:  # pragma: no cover
             _logger.warning("No token_info returned")
             return resp
+        
+        user_info["username"] = token_info[OIDC_USERNAME_CLAIM]
         session["user_info"] = user_info
+        groups = [str for str in token_info["groups"] if "MLFLOW" in str]
+        is_admin = False
+        for group in groups:
+            if group.lower().endswith("_admin") is True:
+                is_admin = True
+
+        if _store.has_user(user_info['username']) is False:
+            _store.create_user(user_info['username'], user_info['username'], is_admin=is_admin)
+        else:
+            _store.update_user(user_info['username'], user_info['username'], is_admin=is_admin)
 
         return Authorization(auth_type="jwt", data=user_info)
     
