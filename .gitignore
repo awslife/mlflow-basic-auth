@@ -1,24 +1,16 @@
-# Created by https://www.toptal.com/developers/gitignore/api/git,direnv,python
-# Edit at https://www.toptal.com/developers/gitignore?templates=git,direnv,python
+# Created by https://www.toptal.com/developers/gitignore/api/python,direnv,backup
+# Edit at https://www.toptal.com/developers/gitignore?templates=python,direnv,backup
+
+### Backup ###
+*.bak
+*.gho
+*.ori
+*.orig
+*.tmp
 
 ### direnv ###
 .direnv
 .envrc
-
-### Git ###
-# Created by git for backups. To disable backups in Git:
-# $ git config --global mergetool.keepBackup false
-*.orig
-
-# Created by git when using merge tools for conflicts
-*.BACKUP.*
-*.BASE.*
-*.LOCAL.*
-*.REMOTE.*
-*_BACKUP_*.txt
-*_BASE_*.txt
-*_LOCAL_*.txt
-*_REMOTE_*.txt
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
@@ -122,7 +114,7 @@ ipython_config.py
 #   This is especially recommended for binary packages to ensure reproducibility, and is more
 #   commonly ignored for libraries.
 #   https://python-poetry.org/docs/basic-usage/#commit-your-poetrylock-file-to-version-control
-poetry.lock
+#poetry.lock
 
 # pdm
 #   Similar to Pipfile.lock, it is generally recommended to include pdm.lock in version control.
@@ -192,9 +184,13 @@ poetry.toml
 # LSP config files
 pyrightconfig.json
 
-# End of https://www.toptal.com/developers/gitignore/api/git,direnv,python
+# End of https://www.toptal.com/developers/gitignore/api/python,direnv,backup
 
-### MLflow ###
+# mlflow
 mlruns/
 basic_auth.db
 basic_auth.ini
+
+# homelab
+.kube/
+

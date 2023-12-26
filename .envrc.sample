@@ -1,18 +1,19 @@
 export BASE_DIR=$(pwd -P)
 export PROFILE_NAME=$(basename $BASE_DIR)
-export PYTHON_VERSION=">=3.10,<3.11"
-export MLFLOW_VERSION=">=2.8,<2.9"
+export _PYTHON_VERSION=">=3.10,<3.11"
+export _MLFLOW_VERSION=">=2.8,<2.9"
 
 if [ -z "$(conda env list | grep $PROFILE_NAME\\s)" ]; then
-    conda create -y -n $PROFILE_NAME python$PYTHON_VERSION mlflow$MLFLOW_VERSION
+    conda create -y -n $PROFILE_NAME python${_PYTHON_VERSION} mlflow${_MLFLOW_VERSION}
 fi
 layout conda $PROFILE_NAME
 
-export OIDC_PROVIDER_NAME="keycloak"
-export OIDC_ISSUER_URL="https://keycloak.com/auth/realms/homelab"
-export OIDC_USERNAME_CLAIM="preferred_username"
-export OIDC_CLIENT_ID=""
-export OIDC_CLIENT_SECRET=""
+export OIDC_ISSUER_URL=https://oidc.issuer.io
+export OIDC_USERNAME_CLAIM=preferred_username
+export OIDC_CLIENT_ID=client
+export OIDC_CLIENT_SECRET=secret
+export OIDC_USER_GROUP="MLFLOW"
 
-export FLASK_APP_SECRET=$(python -c "import uuid; print(str(uuid.uuid4()))")
+export MLFLOW_AUTH_CONFIG_PATH=$BASE_DIR/basic_auth.ini
 
+export DEBUG=1
