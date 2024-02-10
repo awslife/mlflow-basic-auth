@@ -15,5 +15,6 @@ export OIDC_CLIENT_SECRET=secret
 export OIDC_USER_GROUP="MLFLOW"
 
 export MLFLOW_AUTH_CONFIG_PATH=$BASE_DIR/basic_auth.ini
+export MLFLOW_TRACKING_URI="http://127.0.0.1:8080"
 
-export DEBUG=1
+export DEBUG=True

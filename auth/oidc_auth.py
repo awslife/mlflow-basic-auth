@@ -23,12 +23,11 @@ OIDC_USER_GROUP = os.environ["OIDC_USER_GROUP"]
 OIDC_AUTH_ENDPOINT_URL = f"{OIDC_ISSUER_URL}/protocol/openid-connect/auth"
 OIDC_TOKEN_ENDPOINT_URL = f"{OIDC_ISSUER_URL}/protocol/openid-connect/token"
 
-DEBUG = os.getenv("DEBUG", "0")
-
-BEARER_PREFIX = "bearer "
+DEBUG = os.getenv("DEBUG", "false")
+BEARER_PREFIX = "Bearer "
 
 _logger = logging.getLogger(__name__)
-if DEBUG == "1" or DEBUG == "TRUE" or DEBUG == "True" or DEBUG == "true":
+if DEBUG == "True" or DEBUG == "true":
     _logger.addHandler(logging.StreamHandler(sys.stdout))
     _logger.setLevel(logging.DEBUG)
 
@@ -58,6 +57,7 @@ def update_user(user_info: dict = None):
 
 def authenticate_request() -> Union[Authorization, Response]:
     if session.get("user_info", None) is not None:
+        # _logger.debug("session.get(\"user_info\", None) is not None")
         return Authorization(auth_type="jwt", data=session["user_info"])
 
     resp = make_response()
@@ -67,6 +67,10 @@ def authenticate_request() -> Union[Authorization, Response]:
     token = request.headers.get("Authorization", None)
     code = request.args.get('code', None)
     if token is None and code is None:
+        _logger.debug("token is None and code is None")
+
+        session["user_info"] = None
+
         resp.status_code = 301
         resp.headers["Content-Type"] = "application/x-www-form-urlencoded"
         resp.location = (f"{OIDC_AUTH_ENDPOINT_URL}"
@@ -85,10 +89,15 @@ def authenticate_request() -> Union[Authorization, Response]:
     resp.headers["WWW-Authenticate"] = 'Bearer error="invalid_token"'
 
     user_info = dict()
-    if token is not None and code is None:
-        token = token.lower().startswith(BEARER_PREFIX)[len(BEARER_PREFIX):]
+    # if token is not None and code is None:
+    if token is not None:
+        # _logger.debug("token is not None and code is None")
+        _logger.debug("token is not None")
+        if token.startswith(BEARER_PREFIX) or token.startswith(BEARER_PREFIX.lower()):
+            token = token[len(BEARER_PREFIX):]
+        _logger.debug(f"token={token}")
         try:
-            jwt_token = jwt.decode(token, "secret", algorithms=["HS256"])
+            jwt_token = jwt.decode(token, _public_key, algorithms=['HS256', 'RS256'], audience=OIDC_CLIENT_ID)
             if not jwt_token:
                 _logger.warning("No jwt_token returned")
                 return resp
@@ -102,6 +111,7 @@ def authenticate_request() -> Union[Authorization, Response]:
             return resp
 
     if code is not None and request.headers.get("Authorization", None) is None:
+        _logger.debug("code is not None and request.headers.get(\"Authorization\", None) is None")
         if session.get('state', None) != request.args.get('state', None):
             return resp
         
